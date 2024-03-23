@@ -17,16 +17,17 @@
     (doseq [[time-offset note] (map-indexed vector notes)]
       (play-note note "8n" (+ now (* spacing time-offset))))))
 
-(def delay-slider (.getElementById js/document "delayOffset"))
-(def output (.getElementById js/document "output-container"))
+(comment
+  (def delay-slider (.getElementById js/document "delayOffset"))
+  (def output (.getElementById js/document "output-container"))
 
-(defn update-delay-slider
-  []
-  (-> output
-      .-innerHTML
-      (set! (.-value delay-slider))))
-(update-delay-slider)
+  (defn update-delay-slider
+    []
+    (-> output
+        .-innerHTML
+        (set! (.-value delay-slider))))
+  (update-delay-slider)
 
-(-> delay-slider
-    .-oninput
-    (set! update-delay-slider))
+  (-> delay-slider
+      .-oninput
+      (set! update-delay-slider)))
