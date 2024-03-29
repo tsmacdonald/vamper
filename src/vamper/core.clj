@@ -12,7 +12,7 @@
               1 1 (/ 1 freq) (* duration 2) 0.25))))
 
 (definst harpsichord [freq 440]
-  (let [duration 3/2
+  (let [duration 2
         snd      (string freq duration)
         t1       (* 0.2 (string (* 2/1 freq) duration))
         t2       (* 0.15 (string (* 3/2 freq) duration))
@@ -20,6 +20,24 @@
         t4       (* 0.1 (string (* 5/4 freq) duration))
         snd      (+ snd (mix [t1 t2 t3 t4]))]
     snd))
+
+(defn swing-durations
+  [durations]
+  (let [[first-beat other-beats] (partition-by #(< % 4) durations)
+        first-beat+1             (if (seq other-beats)
+                                   (concat first-beat [(first other-beats)])
+                                   first-beat)
+        [n1 n2 & rest-of-beat]   (map (partial apply -)
+                                      (map vector (drop 1 first-beat+1) first-beat+1))
+        new-beat                 (concat [(+ 1/3 n1) (- n2 1/3)] rest-of-beat)]
+    (if (seq other-beats)
+      (concat new-beat (swing-durations other-beats))
+      new-beat)))
+
+(defn swing-it
+  [part]
+  (let [cumulative-durations (reductions + 0 part)]
+    (swing-durations cumulative-durations)))
 
 (def pitch-ratio-a-minor
   {:a 1
@@ -36,6 +54,54 @@
   [[note octave]]
   (let [octave-adjust (* a-hz (math/pow 2 (- octave 2)))]
     (* octave-adjust (pitch-ratio-a-minor note))))
+
+(def rise-ye-lazy-lubber-tune
+  (let [pitches
+        (map note->hertz
+             (partition 2
+                        [:a 2 :a 2 :b 2 :g 1 :a 2
+                         :c 2 :d 2 :e 2 :c 2 :a 2 :a 1
+                         :a 2 :a 2 :c 2 :g 1 :b 2
+                         :c 2 :d 2 :e 2 :c 2 :a 2
+                         ;; A2
+                         :a 2 :a 2 :b 2 :g 1 :a 2
+                         :c 2 :d 2 :e 2 :c 2 :a 2 :a 1
+                         :a 2 :a 2 :c 2 :g 1 :b 2
+                         :c 2 :d 2 :e 2 :c 2 :a 2 :g 2
+                         ;; B1
+                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :a 3
+                         :g 2 :e 2 :d 2 :c 2 :a 2 :g 2
+                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
+                         :d 2 :e 2 :g 2 :a 3 :a 2 :g 2
+                         ;; B2
+                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :a 3
+                         :g 2 :e 2 :d 2 :c 2 :a 2 :g 2
+                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
+                         :d 2 :e 2 :g 2 :a 3 :a 2]
+                        ))
+        durations
+        (swing-it
+         [2 1 1 3 1
+          1 1 1 1 2 2
+          2 1 1 3 1
+          1 1 1 1 4
+          ;; A2
+          2 1 1 3 1
+          1 1 1 1 2 2
+          2 1 1 3 1
+          1 1 1 1 3 1
+          ;; B1
+          1 1 1 1 1 1 1 1
+          1 1 1 1 3 1
+          1 1 1 1 1 1 1 1
+          1 1 1 1 3 1
+          ;; B2
+          1 1 1 1 1 1 1 1
+          1 1 1 1 3 1
+          1 1 1 1 1 1 1 1
+          1 1 1 1 4])
+        times (reductions + 0 durations)]
+    (map vector times pitches)))
 
 (def rise-ye-lazy-lubber-bass
   (let [pitches
@@ -83,53 +149,6 @@
         times (reductions + 0 durations)]
     (map vector times pitches)))
 
-(def rise-ye-lazy-lubber-tune
-  (let [pitches
-        (map note->hertz
-             (partition 2
-                        [:a 2 :a 2 :b 2 :g 1 :a 2
-                         :c 2 :d 2 :e 2 :c 2 :a 2 :a 1
-                         :a 2 :a 2 :c 2 :g 1 :b 2
-                         :c 2 :d 2 :e 2 :c 2 :a 2
-                         ;; A2
-                         :a 2 :a 2 :b 2 :g 1 :a 2
-                         :c 2 :d 2 :e 2 :c 2 :a 2 :a 1
-                         :a 2 :a 2 :c 2 :g 1 :b 2
-                         :c 2 :d 2 :e 2 :c 2 :a 2 :g 2
-                         ;; B1
-                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :a 3
-                         :g 2 :e 2 :d 2 :c 2 :a 2 :g 2
-                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
-                         :d 2 :e 2 :g 2 :a 3 :a 2 :g 2
-                         ;; B2
-                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :a 3
-                         :g 2 :e 2 :d 2 :c 2 :a 2 :g 2
-                         :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
-                         :d 2 :e 2 :g 2 :a 3 :a 2]
-                        ))
-        durations
-        [2 1 1 3 1
-         1 1 1 1 2 2
-         2 1 1 3 1
-         1 1 1 1 4
-         ;; A2
-         2 1 1 3 1
-         1 1 1 1 2 2
-         2 1 1 3 1
-         1 1 1 1 3 1
-         ;; B1
-         1 1 1 1 1 1 1 1
-         1 1 1 1 3 1
-         1 1 1 1 1 1 1 1
-         1 1 1 1 3 1
-         ;; B2
-         1 1 1 1 1 1 1 1
-         1 1 1 1 3 1
-         1 1 1 1 1 1 1 1
-         1 1 1 1 4]
-        times (reductions + 0 durations)]
-    (map vector times pitches)))
-
 (defn play
   ([metro notes]
    (play harpsichord metro notes))
@@ -144,7 +163,7 @@
   ([tempo]
    (let [metro (metronome (* 4 tempo))]
      (play metro rise-ye-lazy-lubber-tune)
-     (play metro rise-ye-lazy-lubber-bass))))
+#_     (play metro rise-ye-lazy-lubber-bass))))
 
 (comment
   (play (metronome 120) melody)
