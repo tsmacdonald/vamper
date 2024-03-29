@@ -1,22 +1,19 @@
 (ns vamper.core
   (:require
    [clojure.math :as math]
+   [overtone.inst.synth :refer :all]
    [overtone.live :refer :all]))
-
-(definst saw-wave [freq 440 attack 0.01 sustain 0.4 release 0.1 vol 0.4]
-  (* (env-gen (env-lin attack sustain release) 1 1 0 1 FREE)
-     (saw freq)
-     vol))
 
 (defn string
   [freq duration]
   (with-overloaded-ugens
     (* (line:kr 1 1 duration FREE)
-       (pluck (* (white-noise) (env-gen (perc 0.001 5) :action FREE))
+       (pluck (* (white-noise)
+                 (env-gen (perc 0.001 5) :action FREE))
               1 1 (/ 1 freq) (* duration 2) 0.25))))
 
 (definst harpsichord [freq 440]
-  (let [duration 1
+  (let [duration 3/2
         snd      (string freq duration)
         t1       (* 0.2 (string (* 2/1 freq) duration))
         t2       (* 0.15 (string (* 3/2 freq) duration))
@@ -135,8 +132,8 @@
     (map vector times pitches)))
 
 (let [tempo 108]
-  (play #_ saw-wave (metronome (* 4 tempo)) rise-ye-lazy-lubber-tune)
-  (play #_ saw-wave (metronome (* 4 tempo)) rise-ye-lazy-lubber-bass))
+  (play #_ flute (metronome (* 4 tempo)) rise-ye-lazy-lubber-tune)
+  (play #_flute (metronome (* 4 tempo)) rise-ye-lazy-lubber-bass))
 
 (def melody
   (let [pitches
@@ -155,7 +152,7 @@
 (defn play
   ([metro notes] (play harpsichord metro notes))
   ([instrument metro notes]
-   (let [play-note (fn [[beat midi]] (at (metro beat) (-> midi instrument)))]
+   (let [play-note (fn [[beat freq]] (at (metro beat) (instrument freq)))]
      (dorun (map play-note notes)))))
 
 (defn after [beats metro] (comp metro #(+ % beats)))
