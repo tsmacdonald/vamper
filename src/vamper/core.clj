@@ -1,7 +1,6 @@
 (ns vamper.core
   (:require
    [clojure.math :as math]
-   [overtone.inst.synth :refer :all]
    [overtone.live :refer :all]))
 
 (defn string
@@ -131,31 +130,21 @@
         times (reductions + 0 durations)]
     (map vector times pitches)))
 
-(let [tempo 108]
-  (play #_ flute (metronome (* 4 tempo)) rise-ye-lazy-lubber-tune)
-  (play #_flute (metronome (* 4 tempo)) rise-ye-lazy-lubber-bass))
-
-(def melody
-  (let [pitches
-        [67 67 67 69 71                 ; Row, row, row your boat,
-         71 69 71 72 74                 ; Gently down the stream,
-         79 79 79 74 74 74 71 71 71     ; Merrily, merrily, merrily, merrily,
-         67 67 67 74 72 71 69 67]       ; Life is but a dream!
-        durations
-        [1 1 2/3 1/3 1
-         2/3 1/3 2/3 1/3 2
-         1/3 1/3 1/3 1/3 1/3 1/3 1/3 1/3 1/3 1/3 1/3 1/3
-         2/3 1/3 2/3 1/3 2]
-        times (reductions + 0 durations)]
-    (map vector times pitches)))
-
 (defn play
-  ([metro notes] (play harpsichord metro notes))
+  ([metro notes]
+   (play harpsichord metro notes))
   ([instrument metro notes]
    (let [play-note (fn [[beat freq]] (at (metro beat) (instrument freq)))]
      (dorun (map play-note notes)))))
 
 (defn after [beats metro] (comp metro #(+ % beats)))
+
+(defn play-tune!
+  ([] (play-tune! 108))
+  ([tempo]
+   (let [metro (metronome (* 4 tempo))]
+     (play metro rise-ye-lazy-lubber-tune)
+     (play metro rise-ye-lazy-lubber-bass))))
 
 (comment
   (play (metronome 120) melody)
