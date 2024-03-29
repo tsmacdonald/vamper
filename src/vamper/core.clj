@@ -1,7 +1,5 @@
 (ns vamper.core
   (:require
-   [clojure.string :as str]
-   [overtone.inst.synth :refer [simple-flute vintage-bass]]
    [overtone.live :refer :all]))
 
 (definst saw-wave [freq 440 attack 0.01 sustain 0.4 release 0.1 vol 0.4]
