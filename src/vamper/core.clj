@@ -23,22 +23,26 @@
          sig))))
 
 (defn swing-durations
-  [durations]
+  [offset durations]
   (let [[first-beat other-beats] (partition-by #(< % 4) durations)
         first-beat+1             (if (seq other-beats)
                                    (concat first-beat [(first other-beats)])
                                    first-beat)
         [n1 n2 & rest-of-beat]   (map (partial apply -)
                                       (map vector (drop 1 first-beat+1) first-beat+1))
-        new-beat                 (concat [(+ 1/3 n1) (- n2 1/3)] rest-of-beat)]
+        new-beat                 (if n2
+                                   (concat [(+ offset n1) (- n2 offset)] rest-of-beat)
+                                   [n1])]
     (if (seq other-beats)
-      (concat new-beat (swing-durations other-beats))
-      new-beat)))
+      (concat new-beat (swing-durations offset (map #(- % 4) other-beats)))
+      [new-beat])))
 
 (defn swing-it
-  [part]
-  (let [cumulative-durations (reductions + 0 part)]
-    (swing-durations cumulative-durations)))
+  ([part]
+   (swing-it 1/2 part))
+  ([offset part]
+   (let [cumulative-durations (reductions + 0 part)]
+     (swing-durations offset cumulative-durations))))
 
 (def pitch-ratio-a-minor
   {:a 1
@@ -78,10 +82,9 @@
                          :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :a 3
                          :g 2 :e 2 :d 2 :c 2 :a 2 :g 2
                          :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
-                         :d 2 :e 2 :g 2 :a 3 :a 2]
-                        ))
+                         :d 2 :e 2 :g 2 :a 3 :a 2]))
         durations
-        (swing-it
+        (swing-it 1/8
          [2 1 1 3 1
           1 1 1 1 2 2
           2 1 1 3 1
@@ -128,25 +131,26 @@
                          :a 1 :b 1 :c 1 :c 1
                          :d 1 :e 1 :a 1]))
         durations
-        [2 2 2 2
-         2 2 2 2
-         2 2 2 2
-         2 2 4
-         ;; A2
-         2 2 2 2
-         2 2 2 2
-         2 2 2 2
-         2 2 4
-         ;; B1
-         2 2 2 2
-         2 2 2 2
-         2 2 2 2
-         2 2 4
-         ;; B2
-         2 2 2 2
-         2 2 2 2
-         2 2 2 2
-         2 2 4]
+        (swing-it 1/5
+         [2 2 2 2
+          2 2 2 2
+          2 2 2 2
+          2 2 4
+          ;; A2
+          2 2 2 2
+          2 2 2 2
+          2 2 2 2
+          2 2 4
+          ;; B1
+          2 2 2 2
+          2 2 2 2
+          2 2 2 2
+          2 2 4
+          ;; B2
+          2 2 2 2
+          2 2 2 2
+          2 2 2 2
+          2 2 4])
         times (reductions + 0 durations)]
     (map vector times durations pitches)))
 
@@ -173,7 +177,7 @@
   ([tempo]
    (let [metro (metronome (* 4 tempo))]
      (play simple-flute metro rise-ye-lazy-lubber-tune tempo 0.75)
-     (play simple-flute metro rise-ye-lazy-lubber-bass tempo 2))))
+     (play simple-flute (after 0.1 metro) rise-ye-lazy-lubber-bass tempo 2))))
 
 (comment
   (play (metronome 120) melody)
