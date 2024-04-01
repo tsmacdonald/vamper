@@ -3,27 +3,10 @@
    [clojure.math :as math]
    [overtone.live :refer :all]))
 
-(defn string
-  [freq duration]
-  (with-overloaded-ugens
-    (* (line:kr 1 1 duration FREE)
-       (pluck (* (white-noise)
-                 (env-gen (perc 0.01 5) :action FREE))
-              1 1 (/ 1 freq) (* duration 2) 0.25))))
-
-(definst harpsichord [freq 440 duration 2]
-  (let [snd      (string freq duration)
-        t1       (* 0.2 (string (* 2/1 freq) duration))
-        t2       (* 0.15 (string (* 3/2 freq) duration))
-        t3       (* 0.1 (string (* 4/3 freq) duration))
-        t4       (* 0.1 (string (* 5/4 freq) duration))
-        snd      (+ snd (mix [t1 t2 t3 t4]))]
-    snd))
-
 (definst simple-flute [freq 880
                        duration 15/108
                        amp 0.5
-                       attack 0.4
+                       attack 0.1
                        decay 0.5
                        sustain 0.8
                        release 1
@@ -172,16 +155,16 @@
   (* beats
      (/ 15 tempo)))
 
-(defn play
-  ([metro notes tempo]
-   (play harpsichord metro notes tempo))
-  ([instrument metro notes tempo]
-   (let [play-note (fn [[beat duration-in-beats freq]]
-                     (at (metro beat)
-                         (instrument freq (beats->time duration-in-beats tempo))))]
-     (dorun (map play-note notes)))))
+(defn note-player
+  "Expects the instrument to accept [freq duration amplitute]"
+  [metro instrument tempo volume]
+  (fn [[beat duration-in-beats freq]]
+    (at (metro beat)
+      (instrument freq (beats->time duration-in-beats tempo) volume))))
 
-;; todo: make bass louder, document
+(defn play
+  ([instrument metro notes tempo volume]
+   (dorun (map (note-player metro instrument tempo volume) notes))))
 
 (defn after [beats metro] (comp metro #(+ % beats)))
 
@@ -189,8 +172,8 @@
   ([] (play-tune! 108))
   ([tempo]
    (let [metro (metronome (* 4 tempo))]
-     (play simple-flute metro rise-ye-lazy-lubber-tune tempo)
-     (play simple-flute metro rise-ye-lazy-lubber-bass tempo))))
+     (play simple-flute metro rise-ye-lazy-lubber-tune tempo 0.75)
+     (play simple-flute metro rise-ye-lazy-lubber-bass tempo 2))))
 
 (comment
   (play (metronome 120) melody)
