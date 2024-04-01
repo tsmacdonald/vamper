@@ -3,8 +3,29 @@
    [clojure.math :as math]
    [overtone.live :refer :all]))
 
+
+(definst og-simple-flute [freq 880
+                          amp 0.5
+                          attack 0.4
+                          decay 0.5
+                          sustain 0.8
+                          release 1
+                          gate 1
+                          out 0]
+  (let [env  (env-gen (adsr attack decay sustain release) gate :action FREE)
+        mod1 (lin-lin:kr (sin-osc:kr 6) -1 1 (* freq 0.99) (* freq 1.01))
+        mod2 (lin-lin:kr (lf-noise2:kr 1) -1 1 0.2 1)
+        mod3 (lin-lin:kr (sin-osc:kr (ranged-rand 4 6)) -1 1 0.5 1)
+        sig (distort (* env (sin-osc [freq mod1])))
+        sig (* amp sig mod2 mod3)]
+    sig))
+
+(comment
+  (og-simple-flute 440)
+  (kill og-simple-flute))
+
 (definst simple-flute [freq 880
-                       duration 15/108
+                       duration 0.5
                        amp 0.5
                        attack 0.1
                        decay 0.5
@@ -84,7 +105,7 @@
                          :a 3 :e 2 :g 2 :d 2 :e 2 :d 2 :c 2 :e 2
                          :d 2 :e 2 :g 2 :a 3 :a 2]))
         durations
-        (swing-it 1/8
+        (identity ;swing-it 1/8
          [2 1 1 3 1
           1 1 1 1 2 2
           2 1 1 3 1
@@ -131,7 +152,7 @@
                          :a 1 :b 1 :c 1 :c 1
                          :d 1 :e 1 :a 1]))
         durations
-        (swing-it 1/5
+        (identity ;swing-it 1/5
          [2 2 2 2
           2 2 2 2
           2 2 2 2
@@ -160,7 +181,7 @@
      (/ 15 tempo)))
 
 (defn note-player
-  "Expects the instrument to accept [freq duration amplitute]"
+  "Expects the instrument to accept [freq duration amplitude]"
   [metro instrument tempo volume]
   (fn [[beat duration-in-beats freq]]
     (at (metro beat)
